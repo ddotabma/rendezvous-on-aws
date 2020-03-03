@@ -13,3 +13,10 @@ resource "aws_lambda_function" "module_lambda" {
   runtime = "python3.7"
   source_code_hash = data.archive_file.function.output_base64sha256
 }
+
+resource "aws_s3_bucket_object" "main" {
+  bucket = var.bucket_for_lambda
+  key = "${var.name}/lambda_function.zip"
+  source = "../python/${var.name}/lambda_function.zip"
+  etag = filemd5("../python/${var.name}/lambda_function.zip")
+}
