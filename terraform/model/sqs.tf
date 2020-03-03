@@ -1,14 +1,13 @@
-resource "aws_sqs_queue" "model1" {
-  name = "model1"
+resource "aws_sqs_queue" "queue" {
+  name = var.name
   delay_seconds = 0
   max_message_size = 2048
   message_retention_seconds = 86400
   receive_wait_time_seconds = 10
-
 }
 
 resource "aws_sqs_queue_policy" "main" {
-  queue_url = aws_sqs_queue.model1.id
+  queue_url = aws_sqs_queue.queue.id
   policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -19,10 +18,10 @@ resource "aws_sqs_queue_policy" "main" {
       "Effect": "Allow",
       "Principal": "*",
       "Action": "sqs:SendMessage",
-      "Resource": "${aws_sqs_queue.model1.arn}",
+      "Resource": "${aws_sqs_queue.queue.arn}",
       "Condition": {
         "ArnEquals": {
-          "aws:SourceArn": "${aws_sns_topic.main.arn}"
+          "aws:SourceArn": "${var.aws_sns_topic_arn}"
         }
       }
     }
