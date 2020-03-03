@@ -9,7 +9,6 @@ resource "aws_sqs_queue" "model1" {
 
 resource "aws_sqs_queue_policy" "main" {
   queue_url = aws_sqs_queue.model1.id
-
   policy = <<POLICY
 {
   "Version": "2012-10-17",
