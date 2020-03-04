@@ -34,3 +34,9 @@ resource "aws_sqs_queue_policy" "main" {
 }
 POLICY
 }
+
+resource "aws_lambda_event_source_mapping" "lambda_event" {
+  event_source_arn = aws_sqs_queue.queue.arn
+  function_name    = var.lambda_arn
+  enabled          = true
+}

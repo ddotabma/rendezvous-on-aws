@@ -15,11 +15,6 @@ module "lambda_model1" {
   aws_sns_topic_arn = aws_sns_topic.main.arn
 }
 
-module "sqs_model1" {
-  source = "./sqs"
-  name = "model1"
-  aws_sns_topic_arn = aws_sns_topic.main.arn
-}
 
 module "lambda_decoy" {
   source = "./model"
@@ -33,4 +28,12 @@ module "sqs_decoy" {
   source = "./sqs"
   name = "decoy"
   aws_sns_topic_arn = aws_sns_topic.main.arn
+  lambda_arn = module.lambda_decoy.lambda_arn
+}
+
+module "sqs_model1" {
+  source = "./sqs"
+  name = "model1"
+  aws_sns_topic_arn = aws_sns_topic.main.arn
+  lambda_arn = module.lambda_model1.lambda_arn
 }
