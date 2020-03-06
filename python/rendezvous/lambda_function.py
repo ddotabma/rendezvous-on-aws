@@ -21,7 +21,7 @@ def handler(_, __):
     return {
         'statusCode': 200,
         'headers': { 'Content-Type': 'application/json' },
-       'body': json.dumps({ 'username': 'bob', 'id': 20 })
+        'body': json.dumps({ 'username': 'bob', 'id': 20 })
      }
 
 
