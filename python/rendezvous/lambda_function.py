@@ -5,7 +5,7 @@ import json
 # sqs = boto3.client('sqs')
 
 
-def handler(_, __):
+def handler(event, __):
     # publish =  sns.publish(
     #     TopicArn='arn:aws:sns:eu-west-1:756285606505:main',
     #     Message='Test at ' + str(time.time())
@@ -21,7 +21,7 @@ def handler(_, __):
     return {
         'statusCode': 200,
         'headers': { 'Content-Type': 'application/json' },
-        'body': json.dumps({ 'username': 'bob', 'id': 20 })
+        'body': json.dumps({"foo": "bar"})
      }
 
 
