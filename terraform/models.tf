@@ -1,7 +1,7 @@
 module "lambda_rendezvous" {
   source = "./model"
   name = "rendezvous"
-  lambda_role = aws_iam_role.lambda_main.arn
+  lambda_role = aws_iam_role.lambda_rendezvous_role.arn
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
 }

@@ -22,6 +22,7 @@ data "aws_iam_policy_document" "lambda_sqs" {
       "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes",
+      "Kinesis:PutRecord"
     ]
     resources = [
       "*"
@@ -75,3 +76,4 @@ resource "aws_iam_role_policy_attachment" "execution_role" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   role = aws_iam_role.lambda_main.id
 }
+

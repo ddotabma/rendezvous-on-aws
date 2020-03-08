@@ -1,27 +1,41 @@
 import boto3
 import time
 import json
-# sns = boto3.client('sns')
-# sqs = boto3.client('sqs')
-
+sns = boto3.client('sns')
+kinesis = boto3.client("kinesis")
+import datetime
 
 def handler(event, __):
-    # publish =  sns.publish(
-    #     TopicArn='arn:aws:sns:eu-west-1:756285606505:main',
-    #     Message='Test at ' + str(time.time())
-    # )
-    #
-    # queues = sqs.list_queues()
-    #
-    # attrs = {url:sqs.list_queue_tags(QueueUrl=url) for url in queues["QueueUrls"]}
-    #
-    # tags = {url:tag for url, tag in attrs.items() if tag.get("Tags")}
-    # model_queues = [url for url,tag in tags.items() if tag["Tags"].get("model")=="yes"]
-    # return {"statusCode": 200, "body": json.dumps({"rendezvous": "here"})}
+    publish =  sns.publish(
+        TopicArn='arn:aws:sns:eu-west-1:756285606505:main',
+        Message='Test at ' + str(time.time())
+    )
+    now = datetime.datetime.utcnow()
+    stream_name = 'rendezvous'
+    resp = kinesis.put_record(StreamName=stream_name,
+                       Data="XXXXXXXXXXXX", #json.dumps(event),
+                       PartitionKey="rendezvous")
+
+    shards = kinesis.list_shards(
+        StreamName=stream_name
+    )
+
+    response_iterator = kinesis.get_shard_iterator(
+        StreamName=stream_name,
+        ShardId=resp["ShardId"],
+        ShardIteratorType= "AT_TIMESTAMP",
+        Timestamp=now
+    )
+    iterator = response_iterator["ShardIterator"]
+
+    response = kinesis.get_records(
+        ShardIterator=iterator
+    )
+
     return {
         'statusCode': 200,
         'headers': { 'Content-Type': 'application/json' },
-        'body': json.dumps({"foo": "bar"})
+        'body': json.dumps([str(i['Data']) for i in response['Records']])
      }
 
 
