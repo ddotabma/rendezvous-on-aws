@@ -13,7 +13,7 @@ def handler(event, __):
     now = datetime.datetime.utcnow()
     stream_name = 'rendezvous'
     resp = kinesis.put_record(StreamName=stream_name,
-                       Data="XXXXXXXXXXXX", #json.dumps(event),
+                       Data="test " + str(now),
                        PartitionKey="rendezvous")
 
     shards = kinesis.list_shards(
