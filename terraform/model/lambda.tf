@@ -1,7 +1,16 @@
 data "archive_file" "function" {
   type = "zip"
-  source_file = "../python/${var.name}/lambda_function.py"
   output_path = "../python/${var.name}/lambda_function.zip"
+
+  source {
+    content = "../python/${var.name}/lambda_function.py"
+    filename = "lambda_function.py"
+  }
+
+  //    source {
+  //    content  = "${data.template_file.vimrc.rendered}"
+  //    filename = ".vimrc"
+  //  }
 }
 
 resource "aws_lambda_function" "module_lambda" {
@@ -13,6 +22,11 @@ resource "aws_lambda_function" "module_lambda" {
   runtime = "python3.7"
   timeout = 600
   source_code_hash = data.archive_file.function.output_base64sha256
+
+  tags = {
+    name = var.name
+    model_series = var.model_series
+  }
 }
 
 resource "aws_s3_bucket_object" "main" {

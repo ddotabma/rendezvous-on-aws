@@ -13,8 +13,8 @@ def handler(event, __):
     for i in bodies:
         print(i)
         resp = kinesis.put_record(StreamName=stream_name,
-                                  Data=json.dumps({**i,
-                                                   "mode": "decoy",
+                                  Data=json.dumps({"uuid": i["uuid"],
+                                                   "model": "decoy",
                                                    "results": 'awesome'}).encode(),
                                   PartitionKey="rendezvous")
 
