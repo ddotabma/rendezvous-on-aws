@@ -87,10 +87,11 @@ def handler(event, __):
         print("not all models returned on time")
     else:
         print("obtained all results after", time.time() - rendezvous_time, "seconds")
+
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json'},
-        'body': this_call
+        'body': json.dumps(dict(**this_call, **event))
     }
 
 
