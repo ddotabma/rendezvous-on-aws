@@ -1,20 +1,21 @@
 import boto3
 import json
-import datetime
 
 kinesis = boto3.client("kinesis")
 
-
+import time
 def handler(event, __):
     print(event)
     stream_name = 'rendezvous'
     bodies = [json.loads(json.loads(i['body'])['Message']) for i in event['Records']]
     resp = "no records"
     for i in bodies:
-        print(i)
+        now = time.time()
         resp = kinesis.put_record(StreamName=stream_name,
                                   Data=json.dumps({"uuid": i["uuid"],
                                                    "model": "decoy",
+                                                   "start_time": now,
+                                                   "duration": time.time() - now,
                                                    "results": 'awesome'}).encode(),
                                   PartitionKey="rendezvous")
 

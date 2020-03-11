@@ -17,6 +17,8 @@ data "aws_iam_policy_document" "lambda_rendezvous" {
     sid = "lambdasqs"
     effect = "Allow"
     actions = [
+      "lambda:ListFunctions",
+      "lambda:ListTags",
       "sns:Publish",
       "Kinesis:PutRecord",
       "Kinesis:GetRecords",

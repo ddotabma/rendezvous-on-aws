@@ -3,14 +3,15 @@ data "archive_file" "function" {
   output_path = "../python/${var.name}/lambda_function.zip"
 
   source {
-    content = "../python/${var.name}/lambda_function.py"
+    content  = templatefile("../python/${var.name}/lambda_function.py", {})
     filename = "lambda_function.py"
   }
 
-  //    source {
-  //    content  = "${data.template_file.vimrc.rendered}"
-  //    filename = ".vimrc"
-  //  }
+    source {
+    content  = templatefile("../python/${var.name}/model.py", {})
+    filename = "model.py"
+  }
+
 }
 
 resource "aws_lambda_function" "module_lambda" {
