@@ -23,7 +23,8 @@ data "aws_iam_policy_document" "lambda_rendezvous" {
       "Kinesis:PutRecord",
       "Kinesis:GetRecords",
       "Kinesis:ListShards",
-      "Kinesis:GetShardIterator"
+      "Kinesis:GetShardIterator",
+      "ssm:*"
     ]
     resources = [
       "*"

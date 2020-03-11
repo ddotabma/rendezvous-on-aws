@@ -3,13 +3,18 @@ data "archive_file" "function" {
   output_path = "../python/${var.name}/lambda_function.zip"
 
   source {
-    content  = templatefile("../python/${var.name}/lambda_function.py", {})
+    content = templatefile("../python/${var.name}/lambda_function.py", {})
     filename = "lambda_function.py"
   }
 
-    source {
-    content  = templatefile("../python/${var.name}/model.py", {})
+  source {
+    content = templatefile("../python/${var.name}/model.py", {})
     filename = "model.py"
+  }
+
+    source {
+    content = templatefile("../python/${var.name}/utils.py", {})
+    filename = "utils.py"
   }
 
 }
