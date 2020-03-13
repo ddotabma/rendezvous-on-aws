@@ -88,7 +88,7 @@ def handler(event, __):
             'PTRATIO': {224: 17.4},
             'B': {224: 385.05},
             'LSTAT': {224: 4.14}}
-
+    price = model.predict(pd.DataFrame.from_dict(vals))[0]
     for i in bodies:
         print(i)
         now = time.time()
@@ -99,7 +99,7 @@ def handler(event, __):
                                 "duration": time.time() - now,
                                 "time_after_rendezvous": time.time() - i["rendezvous_time"],
                                 "model": "model1",
-                                "results": json.dumps({'price': price}).encode()}),
+                                "results": json.dumps({'price': price})}),
                            PartitionKey="rendezvous")
 
     return price
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     body = {"Type": "Notification",
             "MessageId": "some-id",
             "TopicArn": "arn:aws:sns:eu-west-1:756285606505:main",
-            "Message": '{"foo": "bar"}',
+            "Message": '{"uuid": "268811a2-cb9a-4a23-a66b-b2eea69f0f01", "model": "rendezvous", "datetime": "2020-03-13 14:38:49.752289", "rendezvous_time": 1584110322.4332108, "data": {"value": 100}}',
             "Timestamp": "2020-03-08T15:06:23.149Z",
             "SignatureVersion": "1",
             "Signature": 'signature',
