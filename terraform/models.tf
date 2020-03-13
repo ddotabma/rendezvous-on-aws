@@ -5,6 +5,7 @@ module "lambda_rendezvous" {
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
   model_series = "none"
+  scikit_layer_version_arn = "${aws_lambda_layer_version.scikit_layer.layer_arn}:1"
 }
 
 
@@ -15,6 +16,7 @@ module "lambda_model1" {
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
   model_series = "blog"
+  scikit_layer_version_arn = "${aws_lambda_layer_version.scikit_layer.layer_arn}:1"
 }
 
 
@@ -25,6 +27,7 @@ module "lambda_decoy" {
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
   model_series = "blog"
+  scikit_layer_version_arn = "${aws_lambda_layer_version.scikit_layer.layer_arn}:1"
 }
 
 module "sqs_decoy" {

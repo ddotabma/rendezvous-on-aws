@@ -34,6 +34,10 @@ resource "aws_lambda_function" "module_lambda" {
     name = var.name
     model_series = var.model_series
   }
+
+  layers = [
+    var.scikit_layer_version_arn
+  ]
 }
 
 
