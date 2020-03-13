@@ -8,6 +8,7 @@ import json
 import time
 from io import BytesIO
 import pickle
+import numpy as np
 
 client = boto3.client('sns')
 kinesis = boto3.client("kinesis")
@@ -39,6 +40,7 @@ def train():
 
         return lr
 
+
 def score(model):
     try:
         with BytesIO() as data:
@@ -55,20 +57,18 @@ def score(model):
         newX = boston_df.drop('Price', axis=1)
         newY = boston_df['Price']
         X_train, X_test, y_train, y_test = train_test_split(newX, newY, test_size=0.3, random_state=3)
+        model = train()
 
-        lr = RandomForestRegressor()
-        lr.fit(X_train, y_train)
-
-        return lr
+        return model.score(X_train, y_train), model.score(X_test, y_test)
 
 
 def handler(event, __):
     model = train()
+    train_score, test_score = score(model)
 
-
-    train_score = lr.score(X_train, y_train)
-    test_score = lr.score(X_test, y_test)
-    price = lr.predict(X_test.iloc[:1].values)[0]
+    price = model.predict(np.array([[3.1533e-01, 0.0000e+00, 6.2000e+00, 0.0000e+00, 5.0400e-01,
+                                     8.2660e+00, 7.8300e+01, 2.8944e+00, 8.0000e+00, 3.0700e+02,
+                                     1.7400e+01, 3.8505e+02, 4.1400e+00]]))[0]
 
     stream_name = 'rendezvous'
     bodies = [json.loads(json.loads(i['body'])['Message']) for i in event['Records']]
