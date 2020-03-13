@@ -12,17 +12,18 @@ data "archive_file" "function" {
     filename = "model.py"
   }
 
-    source {
+  source {
     content = templatefile("../python/${var.name}/utils.py", {})
     filename = "utils.py"
   }
 
 }
 
+
 resource "aws_lambda_function" "module_lambda" {
   function_name = var.name
   s3_bucket = "bdr-rendezvous-lambdas"
-  s3_key = "${var.name}/lambda_function.zip"
+  s3_key = "${var.name}/${var.aws_lambda_function_key}"
   handler = "lambda_function.handler"
   role = var.lambda_role
   runtime = "python3.7"
@@ -33,11 +34,16 @@ resource "aws_lambda_function" "module_lambda" {
     name = var.name
     model_series = var.model_series
   }
+
+  layers = [
+    var.scikit_layer_version_arn
+  ]
 }
+
 
 resource "aws_s3_bucket_object" "main" {
   bucket = var.bucket_for_lambda
-  key = "${var.name}/lambda_function.zip"
-  source = "../python/${var.name}/lambda_function.zip"
-  etag = filemd5("../python/${var.name}/lambda_function.zip")
+  key = aws_lambda_function.module_lambda.s3_key
+  source = data.archive_file.function.output_path
+  etag = filemd5(data.archive_file.function.output_path)
 }

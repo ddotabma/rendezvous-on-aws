@@ -16,7 +16,7 @@ def handler(event, __):
         resp = kinesis.put_record(StreamName=stream_name,
                                   Data=json.dumps(
                                       {"uuid": i["uuid"],
-                                       "start_time": i["uuid"],
+                                       "start_time": now,
                                        "duration": time.time() - now,
                                        "time_after_rendezvous": time.time() - i["rendezvous_time"],
                                        "model": "decoy",
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     body = {"Type": "Notification",
             "MessageId": "some-id",
             "TopicArn": "arn:aws:sns:eu-west-1:756285606505:main",
-            "Message": '{"foo": "bar"}',
+            "Message": '{"uuid": "268811a2-cb9a-4a23-a66b-b2eea69f0f01", "model": "rendezvous", "datetime": "2020-03-13 14:38:49.752289", "rendezvous_time": 1584110322.4332108, "data": {"value": 100}}',
             "Timestamp": "2020-03-08T15:06:23.149Z",
             "SignatureVersion": "1",
             "Signature": 'signature',
