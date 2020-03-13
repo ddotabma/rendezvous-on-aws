@@ -23,8 +23,7 @@ def train():
         with BytesIO() as data:
             bucket.download_fileobj("model1.pkl", data)
             data.seek(0)  # move back to the beginning after writing
-            lr = pickle.load(data)
-        return lr
+            return pickle.load(data)
     except Exception as e:
         print(e)
         boston = load_boston()
@@ -37,17 +36,18 @@ def train():
 
         lr = RandomForestRegressor()
         lr.fit(X_train, y_train)
-
+        bucket.put_object(Key="model1.pkl",
+                          Body=pickle.dumps(lr))
         return lr
 
 
 def score(model):
     try:
         with BytesIO() as data:
-            bucket.download_fileobj("model1.pkl", data)
+            bucket.download_fileobj("model1_score.pkl", data)
             data.seek(0)  # move back to the beginning after writing
-            lr = pickle.load(data)
-        return lr
+            scores = pickle.load(data)
+        return scores[0], scores[1]
     except Exception as e:
         print(e)
         boston = load_boston()
@@ -57,7 +57,9 @@ def score(model):
         newX = boston_df.drop('Price', axis=1)
         newY = boston_df['Price']
         X_train, X_test, y_train, y_test = train_test_split(newX, newY, test_size=0.3, random_state=3)
-        model = train()
+        train_score, test_score = model.score(X_train, y_train), model.score(X_test, y_test)
+        bucket.put_object(Key="model1_score.pkl",
+                          Body=json.dumps((train_score, test_score), ensure_ascii=False))
 
         return model.score(X_train, y_train), model.score(X_test, y_test)
 
@@ -72,6 +74,20 @@ def handler(event, __):
 
     stream_name = 'rendezvous'
     bodies = [json.loads(json.loads(i['body'])['Message']) for i in event['Records']]
+
+    vals = {'CRIM': {224: 0.31533},
+            'ZN': {224: 0.0},
+            'INDUS': {224: 6.2},
+            'CHAS': {224: 0.0},
+            'NOX': {224: 0.504},
+            'RM': {224: 8.266},
+            'AGE': {224: 78.3},
+            'DIS': {224: 2.8944},
+            'RAD': {224: 8.0},
+            'TAX': {224: 307.0},
+            'PTRATIO': {224: 17.4},
+            'B': {224: 385.05},
+            'LSTAT': {224: 4.14}}
 
     for i in bodies:
         print(i)
@@ -90,4 +106,22 @@ def handler(event, __):
 
 
 if __name__ == "__main__":
-    handler(None, None)
+    body = {"Type": "Notification",
+            "MessageId": "some-id",
+            "TopicArn": "arn:aws:sns:eu-west-1:756285606505:main",
+            "Message": '{"foo": "bar"}',
+            "Timestamp": "2020-03-08T15:06:23.149Z",
+            "SignatureVersion": "1",
+            "Signature": 'signature',
+            "SigningCertURL": "some-pemk",
+            "UnsubscribeURL": "some-url"}
+    event = {'Records': [{'messageId': '7ee38a85-2033-4c1b-8cc8-13d2d2fd0820',
+                          'receiptHandle': 'string',
+                          'body': json.dumps(body),
+                          'attributes': {'ApproximateReceiveCount': '1', 'SentTimestamp': '1583679983189',
+                                         'SenderId': 'AIDAISMY7JYY5F7RTT6AO',
+                                         'ApproximateFirstReceiveTimestamp': '1583679983258'},
+                          'messageAttributes': {},
+                          'md5OfBody': '371d062ddfe2be3da7c44b4a1126e524', 'eventSource': 'aws:sqs',
+                          'eventSourceARN': 'arn:aws:sqs:eu-west-1:756285606505:decoy', 'awsRegion': 'eu-west-1'}]}
+    print(handler(event, None))
