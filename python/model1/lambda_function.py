@@ -46,7 +46,7 @@ def score(model):
         with BytesIO() as data:
             bucket.download_fileobj("model1_score.pkl", data)
             data.seek(0)  # move back to the beginning after writing
-            scores = pickle.load(data)
+            scores = json.load(data)
         return scores[0], scores[1]
     except Exception as e:
         print(e)

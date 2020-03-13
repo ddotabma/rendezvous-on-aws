@@ -22,7 +22,9 @@ data "aws_iam_policy_document" "lambda_sqs" {
       "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes",
-      "Kinesis:PutRecord"
+      "Kinesis:PutRecord",
+      "S3:PutObject",
+      "S3:GetObject"
     ]
     resources = [
       "*"
