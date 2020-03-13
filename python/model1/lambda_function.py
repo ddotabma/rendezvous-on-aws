@@ -44,7 +44,7 @@ def train():
 def score(model):
     try:
         with BytesIO() as data:
-            bucket.download_fileobj("model1_score.pkl", data)
+            bucket.download_fileobj("model1_score.json", data)
             data.seek(0)  # move back to the beginning after writing
             scores = json.load(data)
         return scores[0], scores[1]
@@ -58,7 +58,7 @@ def score(model):
         newY = boston_df['Price']
         X_train, X_test, y_train, y_test = train_test_split(newX, newY, test_size=0.3, random_state=3)
         train_score, test_score = model.score(X_train, y_train), model.score(X_test, y_test)
-        bucket.put_object(Key="model1_score.pkl",
+        bucket.put_object(Key="model1_score.json",
                           Body=json.dumps((train_score, test_score), ensure_ascii=False))
 
         return model.score(X_train, y_train), model.score(X_test, y_test)
@@ -67,10 +67,6 @@ def score(model):
 def handler(event, __):
     model = train()
     train_score, test_score = score(model)
-
-    price = model.predict(np.array([[3.1533e-01, 0.0000e+00, 6.2000e+00, 0.0000e+00, 5.0400e-01,
-                                     8.2660e+00, 7.8300e+01, 2.8944e+00, 8.0000e+00, 3.0700e+02,
-                                     1.7400e+01, 3.8505e+02, 4.1400e+00]]))[0]
 
     stream_name = 'rendezvous'
     bodies = [json.loads(json.loads(i['body'])['Message']) for i in event['Records']]
@@ -95,12 +91,14 @@ def handler(event, __):
         kinesis.put_record(StreamName=stream_name,
                            Data=json.dumps(
                                {"uuid": i["uuid"],
-                                "start_time": i["uuid"],
+                                "start_time": now,
                                 "duration": time.time() - now,
                                 "time_after_rendezvous": time.time() - i["rendezvous_time"],
                                 "model": "model1",
-                                "results": json.dumps({'price': price})}),
+                                "results": json.dumps(
+                                    dict(test_score=test_score, train_score=train_score, price=price))}),
                            PartitionKey="rendezvous")
+    print("DONE")
 
     return price
 

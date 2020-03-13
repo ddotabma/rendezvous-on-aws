@@ -87,7 +87,7 @@ def handler(event, __):
         print("not all models returned on time")
     else:
         print("obtained all results after", time.time() - rendezvous_time, "seconds")
-
+    print(this_call)
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json'},

@@ -16,7 +16,7 @@ def handler(event, __):
         resp = kinesis.put_record(StreamName=stream_name,
                                   Data=json.dumps(
                                       {"uuid": i["uuid"],
-                                       "start_time": i["uuid"],
+                                       "start_time": now,
                                        "duration": time.time() - now,
                                        "time_after_rendezvous": time.time() - i["rendezvous_time"],
                                        "model": "decoy",
