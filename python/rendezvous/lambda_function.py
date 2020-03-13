@@ -80,7 +80,7 @@ def handler(event, __):
         )
         datas = [json.loads(i['Data'].decode()) for i in response['Records']]
         this_call = {i["model"]: i for i in datas if i['uuid'] == id_ and 'model' in i}
-        print('cycle ', kinesis_counter, " for kinesis")
+        print('cycle ', kinesis_counter, " for kinesis, found", len((this_call)) ,"results")
         kinesis_counter += 1
 
     if len(this_call) < (services + 1):
