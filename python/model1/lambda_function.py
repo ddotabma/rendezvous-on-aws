@@ -8,7 +8,6 @@ import json
 import time
 from io import BytesIO
 import pickle
-import numpy as np
 
 client = boto3.client('sns')
 kinesis = boto3.client("kinesis")
@@ -17,11 +16,13 @@ s3_client = boto3.client("s3")
 
 bucket = s3_resource.Bucket("bdr-rendezvous-model")
 
+model_name = 'model1'
 
-def train():
+
+def train(test_size=0.3, random_state=3):
     try:
         with BytesIO() as data:
-            bucket.download_fileobj("model1.pkl", data)
+            bucket.download_fileobj(f"{model_name}.pkl", data)
             data.seek(0)  # move back to the beginning after writing
             return pickle.load(data)
     except Exception as e:
@@ -32,19 +33,19 @@ def train():
         boston_df['Price'] = boston.target
         newX = boston_df.drop('Price', axis=1)
         newY = boston_df['Price']
-        X_train, X_test, y_train, y_test = train_test_split(newX, newY, test_size=0.3, random_state=3)
+        X_train, X_test, y_train, y_test = train_test_split(newX, newY, test_size=test_size, random_state=random_state)
 
         lr = RandomForestRegressor()
         lr.fit(X_train, y_train)
-        bucket.put_object(Key="model1.pkl",
+        bucket.put_object(Key=f"{model_name}.pkl",
                           Body=pickle.dumps(lr))
         return lr
 
 
-def score(model):
+def score(model, test_size=0.3, random_state=3):
     try:
         with BytesIO() as data:
-            bucket.download_fileobj("model1_score.json", data)
+            bucket.download_fileobj(f"{model_name}_score.json", data)
             data.seek(0)  # move back to the beginning after writing
             scores = json.load(data)
         return scores[0], scores[1]
@@ -56,9 +57,9 @@ def score(model):
         boston_df['Price'] = boston.target
         newX = boston_df.drop('Price', axis=1)
         newY = boston_df['Price']
-        X_train, X_test, y_train, y_test = train_test_split(newX, newY, test_size=0.3, random_state=3)
+        X_train, X_test, y_train, y_test = train_test_split(newX, newY, test_size=test_size, random_state=random_state)
         train_score, test_score = model.score(X_train, y_train), model.score(X_test, y_test)
-        bucket.put_object(Key="model1_score.json",
+        bucket.put_object(Key=f"{model_name}_score.json",
                           Body=json.dumps((train_score, test_score), ensure_ascii=False))
 
         return model.score(X_train, y_train), model.score(X_test, y_test)
@@ -94,7 +95,7 @@ def handler(event, __):
                                 "start_time": now,
                                 "duration": time.time() - now,
                                 "time_after_rendezvous": time.time() - i["rendezvous_time"],
-                                "model": "model1",
+                                "model": model_name,
                                 "results": json.dumps(
                                     dict(test_score=test_score, train_score=train_score, price=price))}),
                            PartitionKey="rendezvous")

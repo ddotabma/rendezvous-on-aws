@@ -9,9 +9,9 @@ async def multiple_get_requests(url_list: List[str]):
         return await asyncio.gather(*[get(client, i) for i in url_list])
 
 
-async def get(session: httpx.AsyncClient, url: str) -> List[dict]:
+async def get(session: httpx.AsyncClient, url: str) -> list:
     response = await session.get(url)  # Make single http request
-    return response.json()  # Obtain response body as dict
+    return response.json()  # type: ignore # Obtain response body as dict
 
 
 results = asyncio.run(

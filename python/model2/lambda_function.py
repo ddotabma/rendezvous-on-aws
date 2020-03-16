@@ -16,7 +16,7 @@ s3_client = boto3.client("s3")
 
 bucket = s3_resource.Bucket("bdr-rendezvous-model")
 
-model_name = 'model1'
+model_name = 'model2'
 
 
 def train(test_size=0.3, random_state=3):

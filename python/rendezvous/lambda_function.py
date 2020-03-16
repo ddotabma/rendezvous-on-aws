@@ -11,7 +11,7 @@ sns = boto3.client('sns')
 kinesis = boto3.client("kinesis")
 lambda_client = boto3.client("lambda")
 ssm = boto3.client('ssm')
-
+from pprint import pprint
 stream_name = 'rendezvous'
 model_series = "blog"
 
@@ -74,7 +74,7 @@ def handler(event, __):
     kinesis_counter = 0
     print("Starting kinesis loop after", time.time() - rendezvous_time, "seconds")
 
-    while (datetime.datetime.utcnow() - now) < datetime.timedelta(seconds=2) and len(this_call) < (services + 1):
+    while (datetime.datetime.utcnow() - now) < datetime.timedelta(seconds=3) and len(this_call) < (services + 1):
         response = kinesis.get_records(
             ShardIterator=response_iterator["ShardIterator"]
         )
@@ -87,7 +87,7 @@ def handler(event, __):
         print("not all models returned on time")
     else:
         print("obtained all results after", time.time() - rendezvous_time, "seconds")
-    print(this_call)
+    pprint(this_call)
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json'},
@@ -96,4 +96,4 @@ def handler(event, __):
 
 
 if __name__ == "__main__":
-    print(handler(None, None))
+    print(handler({}, None))
