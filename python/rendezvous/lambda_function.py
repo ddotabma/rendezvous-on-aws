@@ -4,14 +4,13 @@ import datetime
 import uuid
 from model import *
 import time
-
+from pprint import pprint
 from utils import timer
 
 sns = boto3.client('sns')
 kinesis = boto3.client("kinesis")
 lambda_client = boto3.client("lambda")
 ssm = boto3.client('ssm')
-from pprint import pprint
 stream_name = 'rendezvous'
 model_series = "blog"
 
@@ -72,6 +71,7 @@ def handler(event, __):
     this_call = {}
     services = get_number_from_ssm()
     kinesis_counter = 0
+
     print("Starting kinesis loop after", time.time() - rendezvous_time, "seconds")
 
     while (datetime.datetime.utcnow() - now) < datetime.timedelta(seconds=3) and len(this_call) < (services + 1):
@@ -80,18 +80,20 @@ def handler(event, __):
         )
         datas = [json.loads(i['Data'].decode()) for i in response['Records']]
         this_call = {i["model"]: i for i in datas if i['uuid'] == id_ and 'model' in i}
-        print('cycle ', kinesis_counter, " for kinesis, found", len((this_call)) ,"results")
+        print('cycle ', kinesis_counter, " for kinesis, found", len((this_call)), "results")
         kinesis_counter += 1
+        time.sleep(0.2)
 
     if len(this_call) < (services + 1):
         print("not all models returned on time")
     else:
         print("obtained all results after", time.time() - rendezvous_time, "seconds")
     pprint(this_call)
+
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json'},
-        'body': json.dumps(dict(**this_call, **event))
+        'body': json.dumps(dict(**this_call, total_time=time.time() - rendezvous_time))
     }
 
 

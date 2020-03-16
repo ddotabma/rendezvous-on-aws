@@ -2,6 +2,7 @@ import httpx
 from typing import List
 import asyncio
 import os
+import matplotlib.pyplot as plt
 
 
 async def multiple_get_requests(url_list: List[str]):
@@ -16,10 +17,12 @@ async def get(session: httpx.AsyncClient, url: str) -> list:
 
 results = asyncio.run(
     multiple_get_requests(
-        [os.environ["API"] for _ in range(2)]  # todo make var
+        [os.environ["API"] for _ in range(4)]  # todo make var
     )
 )
 
-print(results)
+times = [i['total_time'] for i in results if 'total_time' in i]
+no_times = [i['message'] for i in results if 'total_time' not in i]
+print(results, len(times), len(no_times))
 
 print(f"{len(results)} responses")
