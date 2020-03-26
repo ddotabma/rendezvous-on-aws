@@ -38,7 +38,7 @@ def get_number_from_ssm() -> int:
     return int(value)
 
 
-def handler(event, __):
+def handler(_, __):
     id_ = str(uuid.uuid4())
     rendezvous_time = time.time()
     rendezvous_data = json.dumps(dict(uuid=str(id_),
