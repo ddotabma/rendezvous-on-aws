@@ -5,7 +5,7 @@ import uuid
 from model import *
 import time
 from pprint import pprint
-from utils import timer
+from shared_modules.utils import timer
 
 sns = boto3.client('sns')
 kinesis = boto3.client("kinesis")

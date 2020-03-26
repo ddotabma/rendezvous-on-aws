@@ -7,6 +7,6 @@ variable "aws_lambda_function_key" {
   default = "lambda_function.zip"
 }
 
-variable "scikit_layer_version_arn" {
-  default = ""
+variable "layers" {
+  type = list(string)
 }

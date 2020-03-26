@@ -32,19 +32,15 @@ data "aws_iam_policy_document" "lambda_rendezvous" {
   }
 }
 
-resource "aws_iam_policy" "lambda_rendezvous" {
+resource "aws_iam_role_policy" "lambda_rendezvous" {
   name = "lambda_rendezvous_policy"
   policy = data.aws_iam_policy_document.lambda_rendezvous.json
+  role = aws_iam_role.lambda_rendezvous_role.id
 }
 
 resource "aws_iam_role" "lambda_rendezvous_role" {
   name = "lambda_rendezvous_role"
   assume_role_policy = data.aws_iam_policy_document.lambda_rendezvous_assume.json
-}
-
-resource "aws_iam_role_policy_attachment" "sns_kinesis_rendezvous" {
-  policy_arn = aws_iam_policy.lambda_rendezvous.arn
-  role = aws_iam_role.lambda_rendezvous_role.id
 }
 
 resource "aws_iam_role_policy_attachment" "execution_role_rendezvous" {

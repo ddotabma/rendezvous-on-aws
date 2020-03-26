@@ -5,9 +5,11 @@ module "lambda_rendezvous" {
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
   model_series = "none"
-  scikit_layer_version_arn = "${aws_lambda_layer_version.scikit_layer.layer_arn}:3"
+  layers = [
+    aws_lambda_layer_version.scikit_layer.arn,
+    aws_lambda_layer_version.shared_modules.arn
+  ]
 }
-
 
 module "lambda_model2" {
   source = "./model"
@@ -16,7 +18,10 @@ module "lambda_model2" {
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
   model_series = "blog"
-  scikit_layer_version_arn = "${aws_lambda_layer_version.scikit_layer.layer_arn}:3"
+  layers = [
+    aws_lambda_layer_version.scikit_layer.arn,
+    aws_lambda_layer_version.shared_modules.arn
+  ]
 }
 
 module "lambda_model1" {
@@ -26,7 +31,10 @@ module "lambda_model1" {
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
   model_series = "blog"
-  scikit_layer_version_arn = "${aws_lambda_layer_version.scikit_layer.layer_arn}:3"
+  layers = [
+    aws_lambda_layer_version.scikit_layer.arn,
+    aws_lambda_layer_version.shared_modules.arn
+  ]
 }
 
 module "lambda_decoy" {
@@ -36,7 +44,10 @@ module "lambda_decoy" {
   bucket_for_lambda = aws_s3_bucket.lambdas.bucket
   aws_sns_topic_arn = aws_sns_topic.main.arn
   model_series = "blog"
-  scikit_layer_version_arn = "${aws_lambda_layer_version.scikit_layer.layer_arn}:3"
+  layers = [
+    aws_lambda_layer_version.scikit_layer.arn,
+    aws_lambda_layer_version.shared_modules.arn
+  ]
 }
 
 module "sqs_decoy" {
