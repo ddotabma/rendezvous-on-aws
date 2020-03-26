@@ -11,7 +11,7 @@ resource "aws_lambda_layer_version" "scikit_layer" {
 data "archive_file" "function" {
   type = "zip"
   output_path = "scikit-layer.zip"
-  source_dir = "../python/layer"
+  source_dir = "../python/layer/"
 }
 
 resource "aws_s3_bucket_object" "main" {
@@ -34,7 +34,7 @@ resource "aws_lambda_layer_version" "shared_modules" {
 data "archive_file" "shared_modules" {
   type = "zip"
   output_path = "shared-modules.zip"
-  source_dir = "../python/shared_modules/"
+  source_dir = "../python/shared_layer/"
 }
 
 resource "aws_s3_bucket_object" "shared_modules" {
