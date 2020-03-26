@@ -2,7 +2,6 @@ import httpx
 from typing import List
 import asyncio
 import os
-import matplotlib.pyplot as plt
 
 
 async def multiple_get_requests(url_list: List[str]):
