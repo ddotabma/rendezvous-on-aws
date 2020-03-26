@@ -21,7 +21,7 @@ model_name = 'model2'
 
 def handler(event, __):
     records = [Record(**i) for i in event["Records"]]
-    model = train(test_size=0.3, random_state=3, bucket=bucket)
+    model = train(test_size=0.3, random_state=3, bucket=bucket, model_name=model_name)
     train_score, test_score = score(model, test_size=0.3, random_state=3, model_name=model_name, bucket=bucket)
     stream_name = 'rendezvous'
     messages: List[RendezvousMessage] = [i.body.Message for i in records]

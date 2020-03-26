@@ -74,7 +74,7 @@ def handler(_, __):
 
     print("Starting kinesis loop after", time.time() - rendezvous_time, "seconds")
 
-    while (datetime.datetime.utcnow() - now) < datetime.timedelta(seconds=3) and len(this_call) < (services + 1):
+    while (datetime.datetime.utcnow() - now) < datetime.timedelta(seconds=5) and len(this_call) < (services + 1):
         response = kinesis.get_records(
             ShardIterator=response_iterator["ShardIterator"]
         )
