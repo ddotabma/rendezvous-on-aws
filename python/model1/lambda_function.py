@@ -1,8 +1,7 @@
 import boto3
 import pandas as pd
-from shared_modules.response_model import ModelResponse, BostonEvent, RendezvousMessage
+from shared_modules.response_model import ModelResponse, BostonEvent
 from dataclasses import asdict
-import json
 import time
 from shared_modules.forest import score, train
 
@@ -34,7 +33,9 @@ def handler(event, __):
                                    time_after_rendezvous=time.time() - message.rendezvous_time,
                                    model=model_name,
                                    results=json.dumps(
-                                       dict(test_score=test_score, train_score=train_score, price=price))))))
+                                       dict(test_score=test_score,
+                                            train_score=train_score,
+                                            price=price))))))
 
         print("DONE")
         return price

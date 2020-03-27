@@ -1,8 +1,7 @@
 import boto3
 import pandas as pd
-from shared_modules.response_model import ModelResponse, BostonEvent, RendezvousMessage
+from shared_modules.response_model import ModelResponse, BostonEvent
 from dataclasses import asdict
-import json
 import time
 from shared_modules.forest import score, train
 

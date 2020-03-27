@@ -6,7 +6,7 @@ from model import *
 import time
 from pprint import pprint
 from shared_modules.utils import timer
-from shared_modules.response_model import RendezvousMessage, Specifications, BostonRequest
+from shared_modules.response_model import RendezvousMessage, Specifications, BostonRequest, ModelResponse
 from dataclasses import asdict
 
 sns = boto3.client('sns')
@@ -40,6 +40,13 @@ def get_number_from_ssm() -> int:
     return int(value)
 
 
+def publish_sns_message(rendezvous_data, stream_name):
+    sns.publish(
+        TopicArn='arn:aws:sns:eu-west-1:756285606505:main',
+        Message=rendezvous_data
+    )
+
+
 def handler(event, __):
     print(event["queryStringParameters"])
     id_ = str(uuid.uuid4())
@@ -53,11 +60,9 @@ def handler(event, __):
                                                               kinesis_stream="rendezvous"
                                                           ))))
     print(rendezvous_data)
-    sns.publish(
-        TopicArn='arn:aws:sns:eu-west-1:756285606505:main',
-        Message=rendezvous_data
-    )
+    publish_sns_message(rendezvous_data)
     now = datetime.datetime.utcnow()
+
     print("Start putting kinesis record after", time.time() - rendezvous_time, "seconds")
 
     resp = kinesis.put_record(StreamName=stream_name,
@@ -105,21 +110,6 @@ def handler(event, __):
 
 
 if __name__ == "__main__":
-    # print(handler(
-    # {"CRIM": 0.31533,
-    #                "ZN": 0.0,
-    #                "INDUS": 6.2,
-    #                "CHAS": 0.0,
-    #                "NOX": 0.504,
-    #                "RM": 8.266,
-    #                "AGE": 78.3,
-    #                "DIS": 2.8944,
-    #                "RAD": 8.0,
-    #                "TAX": 307.0,
-    #                "PTRATIO": 17.4,
-    #                "B": 385.05,
-    #                "LSTAT": 4.14}
-    #                , None))
     print(handler(
         {'resource': '/root', 'path': '/root', 'httpMethod': 'POST', 'headers': {'Accept': '*/*',
                                                                                  'Accept-Encoding': 'gzip, deflate, br',
