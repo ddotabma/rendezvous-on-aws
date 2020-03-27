@@ -27,6 +27,7 @@ resource "aws_lambda_layer_version" "shared_modules" {
   layer_name = "shared_modules"
   s3_bucket = aws_s3_bucket.lambdas.bucket
   s3_key = aws_s3_bucket_object.shared_modules.key
+  source_code_hash = filebase64sha256(aws_s3_bucket_object.shared_modules.source)
   compatible_runtimes = [
     "python3.7"]
 }
@@ -41,5 +42,5 @@ resource "aws_s3_bucket_object" "shared_modules" {
   bucket = aws_s3_bucket.lambdas.bucket
   key = "shared-modules.zip"
   source = data.archive_file.shared_modules.output_path
-  etag = filemd5(data.archive_file.shared_modules.output_path)
+  etag = filebase64sha256(data.archive_file.shared_modules.output_path)
 }

@@ -1,12 +1,9 @@
 import boto3
 import pandas as pd
-
+from shared_modules.response_model import ModelResponse, BostonEvent, RendezvousMessage
 from dataclasses import asdict
-from shared_modules.response_model import ModelResponse, RendezvousMessage, BostonRequest, BostonEvent
-from typing import List
 import json
 import time
-
 from shared_modules.forest import score, train
 
 client = boto3.client('sns')
@@ -15,21 +12,19 @@ s3_resource = boto3.resource("s3")
 s3_client = boto3.client("s3")
 
 bucket = s3_resource.Bucket("bdr-rendezvous-model")
-
 model_name = 'model2'
+
+model = train(test_size=0.3, random_state=3, model_name=model_name, bucket=bucket)
+train_score, test_score = score(model, test_size=0.3, random_state=3, model_name=model_name, bucket=bucket)
 
 
 def handler(event, __):
     records = [BostonEvent(**i) for i in event["Records"]]
-    model = train(test_size=0.3, random_state=3, bucket=bucket, model_name=model_name)
-    train_score, test_score = score(model, test_size=0.3, random_state=3, model_name=model_name, bucket=bucket)
-    messages: List[RendezvousMessage] = [i.body.Message for i in records]
+    prices = model.predict(pd.DataFrame.from_records([asdict(i.body.Message.data.request) for i in records]))
+    now = time.time()
 
-
-    price = model.predict(pd.DataFrame.from_dict(vals))[0]
-    for message in messages:
-        print(message)
-        now = time.time()
+    for price, record in zip(prices, records):
+        message = record.body.Message
         kinesis.put_record(StreamName=message.data.kinesis_stream,
                            PartitionKey="rendezvous",
                            Data=json.dumps(
@@ -47,38 +42,38 @@ def handler(event, __):
 
 
 if __name__ == "__main__":
-    m = {'CRIM': 0.31533,
-         'ZN': 0.0,
-         'INDUS': 6.2,
-         'CHAS': 0.0,
-         'NOX': 0.504,
-         'RM': 8.266,
-         'AGE': 78.3,
-         'DIS': 2.8944,
-         'RAD': 8.0,
-         'TAX': 307.0,
-         'PTRATIO': 17.4,
-         'B': 385.05,
-         'LSTAT': 4.14}
-    event_ = {'Records': [{'messageId': 'j',
-                           'receiptHandle': 'k',
-                           'body': '{\n  "Type" : "f",\n  "MessageId" : "f-6229-5657-8ac9-d8e0a3e6651f",\n  '
-                                   '"TopicArn" : "f",\n  "Message" : '
-                                   '"{\\"uuid\\": \\"d3e2fc7a-8db3-4b64-aaab-1920809be26f\\", \\"model\\": '
-                                   '\\"rendezvous\\", \\"datetime\\": \\"2020-03-26 14:43:27.757108\\", '
-                                   '\\"rendezvous_time\\": 1585233807.757103, \\"data\\": {\\"value\\": 100, '
-                                   '\\"kinesis_stream\\": \\"rendezvous\\"}}",\n  '
-                                   '"Timestamp" : "2020-03-26T14:43:27.936Z",\n  "SignatureVersion" : "1",\n  '
-                                   '"Signature" : "x",\n  "SigningCertURL" : "https://sns.eu-west-1.amazonaws.com/Sim'
-                                   'pleNotificationService-a86cb10b4e1f29c941702d737128f7b6.pem",\n  "UnsubscribeURL" : "'
-                                   'https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:e'
-                                   'u-west-1:756285606505:main:4e7f0095-8603-4043-8dfa-49c614b8b7aa"\n}',
-                           'attributes': {'k': '1', 'SentTimestamp': 'k',
-                                          'SenderId': 'a',
-                                          'ApproximateFirstReceiveTimestamp': '1'},
-                           'messageAttributes': {},
-                           'md5OfBody': 'x',
-                           'eventSource': 'aws:sqs',
-                           'eventSourceARN': 'arn:aws:sqs:eu-west-1:756285606505:decoy',
-                           'awsRegion': 'eu-west-1'}]}
-    print(handler(event_, None))
+    import json
+
+    event = {'CRIM': 0.41533,
+             'ZN': 0.0,
+             'INDUS': 5.2,
+             'CHAS': 0.0,
+             'NOX': 0.504,
+             'RM': 8.266,
+             'AGE': 78.3,
+             'DIS': 2.8944,
+             'RAD': 8.0,
+             'TAX': 307.0,
+             'PTRATIO': 17.4,
+             'B': 35.05,
+             'LSTAT': 4.14}
+    body = {"Type": "Notification", "MessageId": "5bb7b2c5-841f-588e-a92d-e43279e2292d",
+            "TopicArn": "arn:aws:sns:eu-west-1:756285606505:main",
+            "Message": json.dumps({"uuid": "144cb9ff-0e08-470c-8c3a-97ad4fbebb6c", "model": "rendezvous",
+                                   "datetime": "2020-03-27 13:12:29.854535",
+                                   "rendezvous_time": 1585314749.854531, "data":
+                                       {"request": event, "kinesis_stream": "rendezvous"}}),
+            "Timestamp": "2020-03-27T13:12:29.975Z",
+            "SignatureVersion": "1",
+            "Signature": "s"}
+    records = {'Records': [{'messageId': '969184a4-ba98-4cbe-95b7-0f9c7a6a7948',
+                            'receiptHandle': 'ttJ',
+                            'body': json.dumps(body),
+                            'attributes': {'ApproximateReceiveCount': '1', 'SentTimestamp': '1585314750005',
+                                           'SenderId': 'AIDAISMY7JYY5F7RTT6AO',
+                                           'ApproximateFirstReceiveTimestamp': '1585314750007'},
+                            'messageAttributes': {},
+                            'md5OfBody': 'd64514f64e6396b0a3d2fc3dba368451', 'eventSource': 'aws:sqs',
+                            'eventSourceARN': 'arn:aws:sqs:eu-west-1:756285606505:model2', 'awsRegion': 'eu-west-1'}]}
+    # event_ = {'Records': [{'messageId': '969184a4-ba98-4cbe-95b7-0f9c7a6a7948', 'receiptHandle': 'AQEBPe5ijWxdEKxG/P95pJyBKlvxglYGUmSiSudcAgF1ANtKekjhYu7mCjqckgpOOXRAwOq2AkQVlfMCPTjIdsEjxS09WNCDdnf4kqHKx7BagEzRWzsPt3Wl/16wsRIhqxkElepat88j9ssPoD27bsTjFdvpFXFbOMssjr/7KacU5P6WWKR5CKTCuNEwYvz8tSFVgdDQDieBUqYmBvs6Yn3PZ6EQOxeULCZ4G9e8oYG9wAriipLwrGO1C33gKjMBl4/6mXXdFfV6GsRMttJuC4bXHZLimAQuLqcaaIn8ljK+eHYWsnpTyqlWXbn9ucAL1vJHIgOgLQo9QSQ+homh5bt7EhmgwXl4k9OpZPlN7N1JOi5hFyGVnBNFSO4xGr4dm6m+', 'body': '{\n  "Type" : "Notification",\n  "MessageId" : "5bb7b2c5-841f-588e-a92d-e43279e2292d",\n  "TopicArn" : "arn:aws:sns:eu-west-1:756285606505:main",\n  "Message" : "{\\"uuid\\": \\"144cb9ff-0e08-470c-8c3a-97ad4fbebb6c\\", \\"model\\": \\"rendezvous\\", \\"datetime\\": \\"2020-03-27 13:12:29.854535\\", \\"rendezvous_time\\": 1585314749.854531, \\"data\\": {\\"request\\": {\\"CRIM\\": {\\"224\\": 0.31533}, \\"ZN\\": {\\"224\\": 0.0}, \\"INDUS\\": {\\"224\\": 6.2}, \\"CHAS\\": {\\"224\\": 0.0}, \\"NOX\\": {\\"224\\": 0.504}, \\"RM\\": {\\"224\\": 8.266}, \\"AGE\\": {\\"224\\": 78.3}, \\"DIS\\": {\\"224\\": 2.8944}, \\"RAD\\": {\\"224\\": 8.0}, \\"TAX\\": {\\"224\\": 307.0}, \\"PTRATIO\\": {\\"224\\": 17.4}, \\"B\\": {\\"224\\": 385.05}, \\"LSTAT\\": {\\"224\\": 4.14}}, \\"kinesis_stream\\": \\"rendezvous\\"}}
+    print(handler(records, None))
