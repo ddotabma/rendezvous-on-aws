@@ -1,9 +1,8 @@
 import boto3
 import pandas as pd
-from shared_modules.response_model import ModelResponse, BostonEvent, ModelResult
+from shared_modules.response_model import BostonEvent
 from dataclasses import asdict
-import time
-from shared_modules.forest import score, train
+from shared_modules.forest import score, train, run_model
 from typing import List
 
 client = boto3.client('sns')
@@ -27,29 +26,11 @@ def predict_prices(records: List[BostonEvent]):
 
 
 def handler(sqs_event, __):
-    records = [BostonEvent(**i) for i in sqs_event["Records"]]
-    prices = predict_prices(records)
-
-    for price, record in zip(prices, records):
-        message = record.body.Message
-        now = time.time()
-
-        model_response = ModelResponse(  # create instance of standardized response
-            uuid=message.uuid,
-            start_time=now,
-            duration=time.time() - now,
-            time_after_rendezvous=time.time() - message.rendezvous_time,
-            model=model_name,
-            results=asdict(ModelResult(test_score=test_score,
-                                train_score=train_score,
-                                price=price)))
-
-        kinesis.put_record(StreamName=message.data.kinesis_stream,
-                           PartitionKey=message.uuid,
-                           Data=model_response.json())
-
-        print("DONE")
-        return price  # unused
+    return run_model(model=model,
+                     model_name=model_name,
+                     test_score=test_score,
+                     train_score=train_score,
+                     sqs_event=sqs_event)
 
 
 if __name__ == "__main__":

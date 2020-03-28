@@ -93,6 +93,7 @@ def handler(event, __):
                 ShardIterator=response_iterator["ShardIterator"]
             )
             datas = [json.loads(i['Data'].decode()) for i in response['Records']]
+            print([i['uuid'] for i in datas])
             this_call = {i["model"]: i for i in datas if i['uuid'] == id_ and 'model' in i}
             print('cycle ', kinesis_counter, " for kinesis, found", len((this_call)), "results")
             kinesis_counter += 1
@@ -113,7 +114,7 @@ def handler(event, __):
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps(dict(stacktrace=traceback.format_exc(), message=str(e)))
+            'body': json.dumps(dict(traceback=traceback.format_exc(), message=str(e)))
         }
 
 
