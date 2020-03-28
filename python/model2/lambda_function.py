@@ -1,9 +1,10 @@
 import boto3
 import pandas as pd
-from shared_modules.response_model import ModelResponse, BostonEvent
+from shared_modules.response_model import ModelResponse, BostonEvent, ModelResult
 from dataclasses import asdict
 import time
 from shared_modules.forest import score, train
+from typing import List
 
 client = boto3.client('sns')
 kinesis = boto3.client("kinesis")
@@ -13,31 +14,42 @@ s3_client = boto3.client("s3")
 bucket = s3_resource.Bucket("bdr-rendezvous-model")
 model_name = 'model2'
 
-model = train(test_size=0.3, random_state=3, model_name=model_name, bucket=bucket)
-train_score, test_score = score(model, test_size=0.3, random_state=3, model_name=model_name, bucket=bucket)
+model = train(test_size=0.3, random_state=3,
+              model_name=model_name, bucket=bucket)
+
+train_score, test_score = score(model, test_size=0.3, random_state=3,
+                                model_name=model_name, bucket=bucket)
 
 
-def handler(event, __):
-    records = [BostonEvent(**i) for i in event["Records"]]
-    prices = model.predict(pd.DataFrame.from_records([asdict(i.body.Message.data.request) for i in records]))
-    now = time.time()
+def predict_prices(records: List[BostonEvent]):
+    """Predict prices for all received requests from SQS"""
+    return model.predict(pd.DataFrame.from_records([asdict(i.body.Message.data.request) for i in records]))
+
+
+def handler(sqs_event, __):
+    records = [BostonEvent(**i) for i in sqs_event["Records"]]
+    prices = predict_prices(records)
 
     for price, record in zip(prices, records):
         message = record.body.Message
+        now = time.time()
+
+        model_response = ModelResponse(  # create instance of standardized response
+            uuid=message.uuid,
+            start_time=now,
+            duration=time.time() - now,
+            time_after_rendezvous=time.time() - message.rendezvous_time,
+            model=model_name,
+            results=asdict(ModelResult(test_score=test_score,
+                                train_score=train_score,
+                                price=price)))
+
         kinesis.put_record(StreamName=message.data.kinesis_stream,
-                           PartitionKey="rendezvous",
-                           Data=json.dumps(
-                               asdict(ModelResponse(
-                                   uuid=message.uuid,
-                                   start_time=now,
-                                   duration=time.time() - now,
-                                   time_after_rendezvous=time.time() - message.rendezvous_time,
-                                   model=model_name,
-                                   results=json.dumps(
-                                       dict(test_score=test_score, train_score=train_score, price=price))))))
+                           PartitionKey=message.uuid,
+                           Data=model_response.json())
 
         print("DONE")
-        return price
+        return price  # unused
 
 
 if __name__ == "__main__":

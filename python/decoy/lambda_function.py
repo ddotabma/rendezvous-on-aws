@@ -1,29 +1,38 @@
 import boto3
-import json
-
-kinesis = boto3.client("kinesis")
+from shared_modules.response_model import ModelResponse, BostonEvent, ModelResult
 
 import time
+from dataclasses import asdict
+
+client = boto3.client('sns')
+kinesis = boto3.client("kinesis")
+s3_resource = boto3.resource("s3")
+s3_client = boto3.client("s3")
+
+model_name = 'decoy'
 
 
-def handler(event, __):
-    print(event)
-    stream_name = 'rendezvous'
-    bodies = [json.loads(json.loads(i['body'])['Message']) for i in event['Records']]
-    resp = "no records"
-    for i in bodies:
+def handler(sqs_event, __):
+    records = [BostonEvent(**i) for i in sqs_event["Records"]]
+
+    for record in records:
+        message = record.body.Message
         now = time.time()
-        resp = kinesis.put_record(StreamName=stream_name,
-                                  Data=json.dumps(
-                                      {"uuid": i["uuid"],
-                                       "start_time": now,
-                                       "duration": time.time() - now,
-                                       "time_after_rendezvous": time.time() - i["rendezvous_time"],
-                                       "model": "decoy",
-                                       "results": 'awesome'}).encode(),
-                                  PartitionKey="rendezvous")
 
-    return resp
+        model_response = ModelResponse(  # create instance of standardized response
+            uuid=message.uuid,
+            start_time=now,
+            duration=time.time() - now,
+            time_after_rendezvous=time.time() - message.rendezvous_time,
+            model=model_name,
+            results=asdict(record.body.Message))
+
+        kinesis.put_record(StreamName=message.data.kinesis_stream,
+                           PartitionKey=message.uuid,
+                           Data=model_response.json())
+
+    print("DONE")
+    return 0  # unused
 
 
 if __name__ == "__main__":
