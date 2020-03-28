@@ -8,6 +8,7 @@ from pprint import pprint
 from shared_modules.utils import timer
 from shared_modules.response_model import RendezvousMessage, Specifications, BostonRequest, ModelResponse
 from dataclasses import asdict
+import traceback
 
 sns = boto3.client('sns')
 kinesis = boto3.client("kinesis")
@@ -40,7 +41,7 @@ def get_number_from_ssm() -> int:
     return int(value)
 
 
-def publish_sns_message(rendezvous_data, stream_name):
+def publish_sns_message(rendezvous_data):
     sns.publish(
         TopicArn='arn:aws:sns:eu-west-1:756285606505:main',
         Message=rendezvous_data
@@ -48,65 +49,72 @@ def publish_sns_message(rendezvous_data, stream_name):
 
 
 def handler(event, __):
-    print(event["queryStringParameters"])
-    id_ = str(uuid.uuid4())
-    rendezvous_time = time.time()
-    rendezvous_data = json.dumps(asdict(RendezvousMessage(uuid=str(id_),
-                                                          model="rendezvous",
-                                                          datetime=str(datetime.datetime.utcnow()),
-                                                          rendezvous_time=rendezvous_time,
-                                                          data=Specifications(
-                                                              request=BostonRequest(**json.loads(event["body"])),
-                                                              kinesis_stream="rendezvous"
-                                                          ))))
-    print(rendezvous_data)
-    publish_sns_message(rendezvous_data)
-    now = datetime.datetime.utcnow()
+    print(event)
+    try:
+        id_ = str(uuid.uuid4())
+        rendezvous_time = time.time()
+        rendezvous_data = json.dumps(asdict(RendezvousMessage(uuid=str(id_),
+                                                              model="rendezvous",
+                                                              datetime=str(datetime.datetime.utcnow()),
+                                                              rendezvous_time=rendezvous_time,
+                                                              data=Specifications(
+                                                                  request=BostonRequest(**json.loads(event["body"])),
+                                                                  kinesis_stream="rendezvous"
+                                                              ))))
+        print(rendezvous_data)
+        publish_sns_message(rendezvous_data)
+        now = datetime.datetime.utcnow()
 
-    print("Start putting kinesis record after", time.time() - rendezvous_time, "seconds")
+        print("Start putting kinesis record after", time.time() - rendezvous_time, "seconds")
 
-    resp = kinesis.put_record(StreamName=stream_name,
-                              Data=rendezvous_data,
-                              PartitionKey="rendezvous")
+        resp = kinesis.put_record(StreamName=stream_name,
+                                  Data=rendezvous_data,
+                                  PartitionKey=id_)
 
-    print("Start getting shard iterator kinesis iterator after", time.time() - rendezvous_time, "seconds")
+        print("Start getting shard iterator kinesis iterator after", time.time() - rendezvous_time, "seconds")
 
-    response_iterator = kinesis.get_shard_iterator(
-        StreamName=stream_name,
-        ShardId=resp["ShardId"],
-        ShardIteratorType="AT_TIMESTAMP",
-        Timestamp=now
-    )
-
-    print("Done getting shard iterator kinesis iterator after", time.time() - rendezvous_time, "seconds")
-
-    this_call = {}
-    services = get_number_from_ssm()
-    kinesis_counter = 0
-
-    print("Starting kinesis loop after", time.time() - rendezvous_time, "seconds")
-
-    while (datetime.datetime.utcnow() - now) < datetime.timedelta(seconds=5) and len(this_call) < (services + 1):
-        response = kinesis.get_records(
-            ShardIterator=response_iterator["ShardIterator"]
+        response_iterator = kinesis.get_shard_iterator(
+            StreamName=stream_name,
+            ShardId=resp["ShardId"],
+            ShardIteratorType="AT_TIMESTAMP",
+            Timestamp=now
         )
-        datas = [json.loads(i['Data'].decode()) for i in response['Records']]
-        this_call = {i["model"]: i for i in datas if i['uuid'] == id_ and 'model' in i}
-        print('cycle ', kinesis_counter, " for kinesis, found", len((this_call)), "results")
-        kinesis_counter += 1
-        time.sleep(0.2)
 
-    if len(this_call) < (services + 1):
-        print("not all models returned on time")
-    else:
-        print("obtained all results after", time.time() - rendezvous_time, "seconds")
-    pprint(this_call)
+        print("Done getting shard iterator kinesis iterator after", time.time() - rendezvous_time, "seconds")
 
-    return {
-        'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
-        'body': json.dumps(dict(**this_call, total_time=time.time() - rendezvous_time))
-    }
+        this_call = {}
+        services = get_number_from_ssm()
+        kinesis_counter = 0
+
+        print("Starting kinesis loop after", time.time() - rendezvous_time, "seconds")
+
+        while (datetime.datetime.utcnow() - now) < datetime.timedelta(seconds=5) and len(this_call) < (services + 1):
+            response = kinesis.get_records(
+                ShardIterator=response_iterator["ShardIterator"]
+            )
+            datas = [json.loads(i['Data'].decode()) for i in response['Records']]
+            this_call = {i["model"]: i for i in datas if i['uuid'] == id_ and 'model' in i}
+            print('cycle ', kinesis_counter, " for kinesis, found", len((this_call)), "results")
+            kinesis_counter += 1
+            time.sleep(0.2)
+
+        if len(this_call) < (services + 1):
+            print("not all models returned on time")
+        else:
+            print("obtained all results after", time.time() - rendezvous_time, "seconds")
+        pprint(this_call)
+
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps(dict(**this_call, total_time=time.time() - rendezvous_time))
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps(dict(stacktrace=traceback.format_exc(), message=str(e)))
+        }
 
 
 if __name__ == "__main__":
