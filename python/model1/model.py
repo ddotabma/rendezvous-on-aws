@@ -4,6 +4,7 @@ from typing import List
 
 @dataclass
 class Function:
+    """Container for results of list functions"""
     FunctionName: str
     FunctionArn: str
     Runtime: str
@@ -35,4 +36,5 @@ class LambdaList:
     Functions: List[Function]
 
     def __post_init__(self):
+        """Convert response dict to Function instance"""
         self.Functions = [Function(**i) for i in self.Functions]  # noqa

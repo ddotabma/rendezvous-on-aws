@@ -18,7 +18,7 @@ model_series = "blog"
 
 
 @timer
-def service_count():
+def service_count() -> int:
     """Count the number of services by finding all the lambda functions that are tagged with "model_series" """
     functions = LambdaList(**lambda_client.list_functions())
     services = []
@@ -72,7 +72,7 @@ def model_results_from_kinesis(identifier, number_of_services, shard_iterator) -
     return model_results
 
 
-def check_number_of_results(model_results, number_of_services, rendezvous_time):
+def compare_number_of_results(model_results: dict, number_of_services: int, rendezvous_time: float) -> None:
     if len(model_results) < (number_of_services + 1):
         print("not all models returned on time")
     else:
@@ -80,7 +80,7 @@ def check_number_of_results(model_results, number_of_services, rendezvous_time):
     pprint(model_results)
 
 
-def handler(event, __):
+def handler(event: dict, __):
     print(event)
     try:
         id_ = str(uuid.uuid4())
@@ -114,9 +114,9 @@ def handler(event, __):
                                                    number_of_services=number_of_services,
                                                    shard_iterator=response_iterator["ShardIterator"])
 
-        check_number_of_results(model_results=model_results,
-                                number_of_services=number_of_services,
-                                rendezvous_time=rendezvous_time)
+        compare_number_of_results(model_results=model_results,
+                                  number_of_services=number_of_services,
+                                  rendezvous_time=rendezvous_time)
 
         return {
             'statusCode': 200,
