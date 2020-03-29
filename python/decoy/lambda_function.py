@@ -27,7 +27,7 @@ def handler(sqs_event, __):
             model=model_name,
             results=asdict(record.body.Message))
 
-        kinesis.put_record(StreamName=message.data.kinesis_stream,
+        kinesis.put_record(StreamName=message.kinesis_stream,
                            PartitionKey=message.uuid,
                            Data=model_response.json())
 

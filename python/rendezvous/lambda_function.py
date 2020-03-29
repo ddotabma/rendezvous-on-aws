@@ -7,7 +7,6 @@ import time
 from pprint import pprint
 from shared_modules.utils import timer
 from shared_modules.response_model import RendezvousMessage, Specifications, BostonRequest, ModelResponse
-from dataclasses import asdict
 import traceback
 
 sns = boto3.client('sns')
@@ -73,6 +72,14 @@ def model_results_from_kinesis(identifier, number_of_services, shard_iterator) -
     return model_results
 
 
+def check_number_of_results(model_results, number_of_services, rendezvous_time):
+    if len(model_results) < (number_of_services + 1):
+        print("not all models returned on time")
+    else:
+        print("obtained all results after", time.time() - rendezvous_time, "seconds")
+    pprint(model_results)
+
+
 def handler(event, __):
     print(event)
     try:
@@ -82,10 +89,11 @@ def handler(event, __):
                                             model="rendezvous",
                                             datetime=str(datetime.datetime.utcnow()),
                                             rendezvous_time=rendezvous_time,
+                                            kinesis_stream="rendezvous",
                                             data=Specifications(
-                                                request=BostonRequest(**json.loads(event["body"])),
-                                                kinesis_stream="rendezvous"
-                                            )).json()  # crease json string to send to models
+                                                request=BostonRequest(**json.loads(event["body"]))
+
+                                            )).json()  # create json string to send to models
         print(rendezvous_data)
         publish_sns_message(rendezvous_data)  # Via SNS and SQS the models are triggered
 
@@ -106,11 +114,9 @@ def handler(event, __):
                                                    number_of_services=number_of_services,
                                                    shard_iterator=response_iterator["ShardIterator"])
 
-        if len(model_results) < (number_of_services + 1):
-            print("not all models returned on time")
-        else:
-            print("obtained all results after", time.time() - rendezvous_time, "seconds")
-        pprint(model_results)
+        check_number_of_results(model_results=model_results,
+                                number_of_services=number_of_services,
+                                rendezvous_time=rendezvous_time)
 
         return {
             'statusCode': 200,
