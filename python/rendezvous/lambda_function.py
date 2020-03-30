@@ -2,11 +2,11 @@ import boto3
 import json
 import datetime
 import uuid
-from model import *
+from shared_modules.boto3_function_model import *
 import time
 from pprint import pprint
 from shared_modules.utils import timer
-from shared_modules.response_model import RendezvousMessage, Specifications, BostonRequest, ModelResponse
+from shared_modules.response_model import RendezvousMessage, Specifications, BostonRequest
 import traceback
 
 sns = boto3.client('sns')
