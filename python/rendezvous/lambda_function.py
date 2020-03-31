@@ -51,6 +51,8 @@ def publish_sns_message(rendezvous_data):
 
 
 def model_results_from_kinesis(identifier, number_of_services, shard_iterator) -> dict:
+    """Keep collecting messages from the Kinesis stream until all results have been found,
+    or the max timeout time has been exceeded"""
     now = datetime.datetime.utcnow()
 
     model_results: dict = {}
